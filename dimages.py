@@ -66,14 +66,28 @@ class Dimages:
 
         self.queuedTasks = {'images': {}, }
         self.dockerClient = docker_client
-        self.quitButton = Button(master, text="Quit", command=lambda: master.destroy())
-        self.quitButton.grid(row=2, column=1, sticky=E, columnspan=2, pady=(5, 10), padx=(0, 5))
+        self.imagesWindow = Toplevel(master)
+        self.imagesWindow.lift()
+        self.imagesWindow.resizable(width=False, height=False)
+        self.imagesWindow.title('Image management')
+        self.quitButton = Button(self.imagesWindow,
+                                 text="Close",
+                                 relief=FLAT,
+                                 bg='SlateGray3',
+                                 command=lambda: self.imagesWindow.destroy())
+        self.quitButton.grid(row=2, column=1,
+                             sticky=E,
+                             columnspan=2,
+                             pady=(5, 10), padx=(0, 5))
 
         # Local images Frame
         ############
         # Main Frame
-        self.localFrame = ttk.Labelframe(master, text='Local images')
-        self.localFrame.grid(row=1, column=1, padx=(4, 4))
+        self.localFrame = ttk.Labelframe(self.imagesWindow,
+                                         relief=RIDGE,
+                                         text='Local images')
+        self.localFrame.grid(row=1, column=1,
+                             padx=(4, 4))
         self.localImages = StringVar(value="")
         self.list_local_images()
 
@@ -82,6 +96,7 @@ class Dimages:
                                listvariable=self.localImages,
                                height=15,
                                width=30,
+                               bg='cornsilk2',
                                selectmode='extended',
                                exportselection=False)
         self.lImages.grid(row=0, column=0,
@@ -89,21 +104,33 @@ class Dimages:
                           padx=(4, 0), pady=(30, 0))
 
         # Scroll y
-        self.lImagesScroll = Scrollbar(self.localFrame, orient=VERTICAL, command=self.lImages.yview)
+        self.lImagesScroll = Scrollbar(self.localFrame,
+                                       orient=VERTICAL,
+                                       bd=0,
+                                       relief=FLAT,
+                                       command=self.lImages.yview)
         self.lImagesScroll.grid(row=0, column=1,
                                 sticky=(W, N, S),
                                 padx=(0, 4), pady=(30, 0))
         self.lImages['yscrollcommand'] = self.lImagesScroll.set
 
         # Scroll x
-        self.lImagesScrollx = Scrollbar(self.localFrame, orient=HORIZONTAL, command=self.lImages.xview)
+        self.lImagesScrollx = Scrollbar(self.localFrame,
+                                        orient=HORIZONTAL,
+                                        bd=0,
+                                        relief=FLAT,
+                                        command=self.lImages.xview)
         self.lImagesScrollx.grid(row=2, column=0,
                                  sticky=(W, E, N),
                                  padx=(4, 0))
         self.lImages['xscrollcommand'] = self.lImagesScrollx.set
 
         # Remove Button
-        self.removeButton = Button(self.localFrame, text="Remove", command=self.remove_images)
+        self.removeButton = Button(self.localFrame,
+                                   text="Remove",
+                                   relief=FLAT,
+                                   bg='SlateGray3',
+                                   command=self.remove_images)
         self.removeButton.grid(row=3, column=0,
                                columnspan=2,
                                padx=(4, 4), pady=(4, 4))
@@ -112,7 +139,9 @@ class Dimages:
         # Remote images Frame
         ############
         # Main Frame
-        self.remoteFrame = ttk.Labelframe(master, text='Remote images')
+        self.remoteFrame = ttk.Labelframe(self.imagesWindow,
+                                          relief=RIDGE,
+                                          text='Remote images')
         self.remoteFrame.grid(row=1, column=0,
                               padx=(4, 4))
         self.remoteImages = StringVar(value="")
@@ -122,20 +151,29 @@ class Dimages:
                                listvariable=self.remoteImages,
                                height=15,
                                width=30,
+                               bg='cornsilk2',
                                exportselection=False)
         self.rImages.grid(row=1, column=0,
                           sticky=(N, W, S, E),
                           padx=(4, 0), columnspan=2)
 
         # Scroll y
-        self.rImagesScrolly = Scrollbar(self.remoteFrame, orient=VERTICAL, command=self.rImages.yview)
+        self.rImagesScrolly = Scrollbar(self.remoteFrame,
+                                        orient=VERTICAL,
+                                        bd=0,
+                                        relief=FLAT,
+                                        command=self.rImages.yview)
         self.rImagesScrolly.grid(row=1, column=2,
                                  sticky=(W, N, S),
                                  padx=(0, 4))
         self.rImages['yscrollcommand'] = self.rImagesScrolly.set
 
         # Scroll x
-        self.rImagesScrollx = Scrollbar(self.remoteFrame, orient=HORIZONTAL, command=self.rImages.xview)
+        self.rImagesScrollx = Scrollbar(self.remoteFrame,
+                                        orient=HORIZONTAL,
+                                        bd=0,
+                                        relief=FLAT,
+                                        command=self.rImages.xview)
         self.rImagesScrollx.grid(row=2, column=0,
                                  columnspan=2,
                                  sticky=(W, E, N),
@@ -143,25 +181,36 @@ class Dimages:
         self.rImages['xscrollcommand'] = self.rImagesScrollx.set
 
         # Tag Label
-        self.tagLabel = Label(self.remoteFrame, text="Tag:")
-        self.tagLabel.grid(row=3, column=0, sticky=W)
+        self.tagLabel = Label(self.remoteFrame,
+                              text="Tag:")
+        self.tagLabel.grid(row=3, column=0,
+                           sticky=W)
 
         # Tag Entry
         self.imageTag = StringVar(value='latest')
-        self.tagEntry = Entry(self.remoteFrame, width=17, textvariable=self.imageTag)
+        self.tagEntry = Entry(self.remoteFrame,
+                              width=17,
+                              bg='cornsilk2',
+                              textvariable=self.imageTag)
         self.tagEntry.grid(row=3, column=0,
                            sticky=E,
                            padx=(4, 0))
 
         # Pull button
-        self.pullButton = Button(self.remoteFrame, text="Pull", command=self.pull_images)
+        self.pullButton = Button(self.remoteFrame,
+                                 text="Pull",
+                                 relief=FLAT,
+                                 bg='SlateGray3',
+                                 command=self.pull_images)
         self.pullButton.grid(row=3, column=1,
                              columnspan=2,
                              padx=(4, 4), pady=(4, 4))
 
         # Search Entry
         self.pattern = StringVar(value="Enter image name...")
-        self.searchInput = Entry(self.remoteFrame, textvariable=self.pattern)
+        self.searchInput = Entry(self.remoteFrame,
+                                 bg='cornsilk2',
+                                 textvariable=self.pattern)
         self.searchInput.grid(row=0, column=0,
                               sticky=W,
                               padx=2)
@@ -169,7 +218,12 @@ class Dimages:
         self.searchInput.bind('<Button-1>', self.initialize_search_input)
 
         # Search button
-        self.searchButton = Button(self.remoteFrame, text="Search", command=lambda: self.list_hub_images(event=None))
+        self.searchButton = Button(self.remoteFrame,
+                                   text="Search",
+                                   relief=FLAT,
+                                   bg='SlateGray3',
+                                   command=lambda:
+                                   self.list_hub_images(event=None))
         self.searchButton.grid(row=0, column=1,
                                sticky=W,
                                pady=(0, 4))
