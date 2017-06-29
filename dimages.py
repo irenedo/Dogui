@@ -66,7 +66,7 @@ class Dimages:
 
         self.queuedTasks = {'images': {}, }
         self.dockerClient = docker_client
-        self.imagesWindow = Toplevel(master)
+        self.imagesWindow = Toplevel(master, relief=FLAT)
         self.imagesWindow.lift()
         self.imagesWindow.resizable(width=False, height=False)
         self.imagesWindow.title('Image management')
@@ -84,7 +84,7 @@ class Dimages:
         ############
         # Main Frame
         self.localFrame = ttk.Labelframe(self.imagesWindow,
-                                         relief=RIDGE,
+                                         relief=GROOVE,
                                          text='Local images')
         self.localFrame.grid(row=1, column=1,
                              padx=(4, 4))
@@ -96,7 +96,9 @@ class Dimages:
                                listvariable=self.localImages,
                                height=15,
                                width=30,
+                               relief=FLAT,
                                bg='cornsilk2',
+                               borderwidth=0,
                                selectmode='extended',
                                exportselection=False)
         self.lImages.grid(row=0, column=0,
@@ -140,7 +142,7 @@ class Dimages:
         ############
         # Main Frame
         self.remoteFrame = ttk.Labelframe(self.imagesWindow,
-                                          relief=RIDGE,
+                                          relief=GROOVE,
                                           text='Remote images')
         self.remoteFrame.grid(row=1, column=0,
                               padx=(4, 4))
@@ -151,6 +153,7 @@ class Dimages:
                                listvariable=self.remoteImages,
                                height=15,
                                width=30,
+                               relief=FLAT,
                                bg='cornsilk2',
                                exportselection=False)
         self.rImages.grid(row=1, column=0,
@@ -191,6 +194,7 @@ class Dimages:
         self.tagEntry = Entry(self.remoteFrame,
                               width=17,
                               bg='cornsilk2',
+                              relief=FLAT,
                               textvariable=self.imageTag)
         self.tagEntry.grid(row=3, column=0,
                            sticky=E,
@@ -210,6 +214,7 @@ class Dimages:
         self.pattern = StringVar(value="Enter image name...")
         self.searchInput = Entry(self.remoteFrame,
                                  bg='cornsilk2',
+                                 relief=FLAT,
                                  textvariable=self.pattern)
         self.searchInput.grid(row=0, column=0,
                               sticky=W,
