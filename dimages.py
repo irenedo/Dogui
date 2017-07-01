@@ -1,6 +1,5 @@
 from tkinter import *
 from tkinter import ttk, messagebox
-import pdb
 import threading
 
 
@@ -49,8 +48,7 @@ class Dimages:
     def remove_images(self):
         img = self.lImages.get(self.lImages.curselection())[0]
         if img.split('(')[0] in self.queuedTasks['images'].keys():
-            messagebox.showinfo(message="You can't remove an image"
-                                        " that is being processed")
+            messagebox.showinfo(message="Can't remove an image that is being processed")
         else:
             try:
                 self.dockerClient.remove_image(img)
