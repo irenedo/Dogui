@@ -64,36 +64,123 @@ class Dimages:
 
         self.queuedTasks = {'images': {}, }
         self.dockerClient = docker_client
-        self.imagesWindow = Toplevel(master, relief=FLAT)
-        self.imagesWindow.lift()
-        self.imagesWindow.resizable(width=False, height=False)
-        self.imagesWindow.title('Image management')
-        self.quitButton = Button(self.imagesWindow,
-                                 text="Close",
+
+        # Remote images Frame
+        ############
+        self.remoteFrame = ttk.Labelframe(master,
+                                          relief=GROOVE,
+                                          text='Remote images')
+        self.remoteFrame.grid(row=0, column=0,
+                              pady=(4, 4),
+                              padx=(4, 4),
+                              sticky=W)
+        self.remoteImages = StringVar(value="")
+
+        # Remote Images Listbox
+        self.rImages = Listbox(self.remoteFrame,
+                               listvariable=self.remoteImages,
+                               height=10,
+                               width=60,
+                               relief=FLAT,
+                               bg='cornsilk2',
+                               exportselection=False)
+        self.rImages.grid(row=1, column=0,
+                          padx=(4, 0))
+
+        # Scroll y
+        self.rImagesScrolly = Scrollbar(self.remoteFrame,
+                                        orient=VERTICAL,
+                                        bd=0,
+                                        relief=FLAT,
+                                        command=self.rImages.yview)
+        self.rImagesScrolly.grid(row=1, column=2,
+                                 sticky=(W, N, S),
+                                 padx=(0, 4))
+        self.rImages['yscrollcommand'] = self.rImagesScrolly.set
+
+        # Scroll x
+        self.rImagesScrollx = Scrollbar(self.remoteFrame,
+                                        orient=HORIZONTAL,
+                                        bd=0,
+                                        relief=FLAT,
+                                        command=self.rImages.xview)
+        self.rImagesScrollx.grid(row=2, column=0,
+                                 sticky=(W, E, N),
+                                 padx=(4, 0))
+        self.rImages['xscrollcommand'] = self.rImagesScrollx.set
+
+        # Tag Label
+        self.tagLabel = Label(self.remoteFrame,
+                              text="Tag:")
+        self.tagLabel.grid(row=3, column=0,
+                           padx=(2, 0),
+                           sticky=W)
+
+        # Tag Entry
+        self.imageTag = StringVar(value='latest')
+        self.tagEntry = Entry(self.remoteFrame,
+                              width=17,
+                              bg='cornsilk2',
+                              relief=FLAT,
+                              textvariable=self.imageTag)
+        self.tagEntry.grid(row=3, column=0,
+                           padx=(30, 0),
+                           sticky=W)
+
+        # Pull button
+        self.pullButton = Button(self.remoteFrame,
+                                 text="Pull",
                                  relief=FLAT,
                                  bg='SlateGray3',
-                                 command=lambda: self.imagesWindow.destroy())
-        self.quitButton.grid(row=2, column=1,
-                             sticky=E,
-                             columnspan=2,
-                             pady=(5, 10), padx=(0, 5))
+                                 command=self.pull_images)
+        self.pullButton.grid(row=3, column=0,
+                             padx=(180, 4),
+                             pady=(0, 6),
+                             sticky=W)
+
+        # Search Entry
+        self.pattern = StringVar(value="Enter image name...")
+        self.searchInput = Entry(self.remoteFrame,
+                                 bg='cornsilk2',
+                                 relief=FLAT,
+                                 textvariable=self.pattern)
+        self.searchInput.grid(row=0, column=0,
+                              sticky=W,
+                              padx=2)
+        self.searchInput.bind('<Return>', self.list_hub_images)
+        self.searchInput.bind('<Button-1>', self.initialize_search_input)
+
+        # Search button
+        self.searchButton = Button(self.remoteFrame,
+                                   text="Search",
+                                   relief=FLAT,
+                                   bg='SlateGray3',
+                                   command=lambda:
+                                   self.list_hub_images(event=None))
+        self.searchButton.grid(row=0, column=0,
+                               padx=(180, 0),
+                               pady=(0, 6),
+                               sticky=W)
+        ############
 
         # Local images Frame
         ############
         # Main Frame
-        self.localFrame = ttk.Labelframe(self.imagesWindow,
+        self.localFrame = ttk.Labelframe(master,
                                          relief=GROOVE,
                                          text='Local images')
-        self.localFrame.grid(row=1, column=1,
-                             padx=(4, 4))
+        self.localFrame.grid(row=0, column=1,
+                             padx=(4, 4),
+                             pady=(4, 4),
+                             sticky=W)
         self.localImages = StringVar(value="")
         self.list_local_images()
 
         # Local Images Listbox
         self.lImages = Listbox(self.localFrame,
                                listvariable=self.localImages,
-                               height=15,
-                               width=30,
+                               height=10,
+                               width=60,
                                relief=FLAT,
                                bg='cornsilk2',
                                borderwidth=0,
@@ -101,7 +188,7 @@ class Dimages:
                                exportselection=False)
         self.lImages.grid(row=0, column=0,
                           sticky=(N, W, S, E),
-                          padx=(4, 0), pady=(30, 0))
+                          padx=(4, 0), pady=(37, 0))
 
         # Scroll y
         self.lImagesScroll = Scrollbar(self.localFrame,
@@ -132,102 +219,6 @@ class Dimages:
                                    bg='SlateGray3',
                                    command=self.remove_images)
         self.removeButton.grid(row=3, column=0,
-                               columnspan=2,
-                               padx=(4, 4), pady=(4, 4))
+                               padx=(4, 4), pady=(0, 4))
         ############
 
-        # Remote images Frame
-        ############
-        # Main Frame
-        self.remoteFrame = ttk.Labelframe(self.imagesWindow,
-                                          relief=GROOVE,
-                                          text='Remote images')
-        self.remoteFrame.grid(row=1, column=0,
-                              padx=(4, 4))
-        self.remoteImages = StringVar(value="")
-
-        # Remote Images Listbox
-        self.rImages = Listbox(self.remoteFrame,
-                               listvariable=self.remoteImages,
-                               height=15,
-                               width=30,
-                               relief=FLAT,
-                               bg='cornsilk2',
-                               exportselection=False)
-        self.rImages.grid(row=1, column=0,
-                          sticky=(N, W, S, E),
-                          padx=(4, 0), columnspan=2)
-
-        # Scroll y
-        self.rImagesScrolly = Scrollbar(self.remoteFrame,
-                                        orient=VERTICAL,
-                                        bd=0,
-                                        relief=FLAT,
-                                        command=self.rImages.yview)
-        self.rImagesScrolly.grid(row=1, column=2,
-                                 sticky=(W, N, S),
-                                 padx=(0, 4))
-        self.rImages['yscrollcommand'] = self.rImagesScrolly.set
-
-        # Scroll x
-        self.rImagesScrollx = Scrollbar(self.remoteFrame,
-                                        orient=HORIZONTAL,
-                                        bd=0,
-                                        relief=FLAT,
-                                        command=self.rImages.xview)
-        self.rImagesScrollx.grid(row=2, column=0,
-                                 columnspan=2,
-                                 sticky=(W, E, N),
-                                 padx=(4, 0))
-        self.rImages['xscrollcommand'] = self.rImagesScrollx.set
-
-        # Tag Label
-        self.tagLabel = Label(self.remoteFrame,
-                              text="Tag:")
-        self.tagLabel.grid(row=3, column=0,
-                           sticky=W)
-
-        # Tag Entry
-        self.imageTag = StringVar(value='latest')
-        self.tagEntry = Entry(self.remoteFrame,
-                              width=17,
-                              bg='cornsilk2',
-                              relief=FLAT,
-                              textvariable=self.imageTag)
-        self.tagEntry.grid(row=3, column=0,
-                           sticky=E,
-                           padx=(4, 0))
-
-        # Pull button
-        self.pullButton = Button(self.remoteFrame,
-                                 text="Pull",
-                                 relief=FLAT,
-                                 bg='SlateGray3',
-                                 command=self.pull_images)
-        self.pullButton.grid(row=3, column=1,
-                             columnspan=2,
-                             padx=(4, 4), pady=(4, 4))
-
-        # Search Entry
-        self.pattern = StringVar(value="Enter image name...")
-        self.searchInput = Entry(self.remoteFrame,
-                                 bg='cornsilk2',
-                                 relief=FLAT,
-                                 textvariable=self.pattern)
-        self.searchInput.grid(row=0, column=0,
-                              sticky=W,
-                              padx=2)
-        self.searchInput.bind('<Return>', self.list_hub_images)
-        self.searchInput.bind('<Button-1>', self.initialize_search_input)
-
-        # Search button
-        self.searchButton = Button(self.remoteFrame,
-                                   text="Search",
-                                   relief=FLAT,
-                                   bg='SlateGray3',
-                                   command=lambda:
-                                   self.list_hub_images(event=None))
-        self.searchButton.grid(row=0, column=1,
-                               sticky=W,
-                               pady=(0, 4))
-        ############

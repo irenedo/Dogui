@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from dimages import *
+from launch_instance import *
 from inspection import *
 from tkinter import *
 from tkinter import ttk, messagebox
@@ -76,10 +77,9 @@ class App:
         for container in container_id:
             Inspection(topwindow=self.master, container=container, dockerclient=self.dockerClient)
 
-    @property
     def remove_containers(self):
         if not self.runningContainersListbox.curselection():
-            return False
+            pass
         container_id = self.get_container_id()
         for container in container_id:
             if self.dockerClient.inspect_container(container)['State']['Running']:
@@ -102,81 +102,35 @@ class App:
 
         self.runningContainers.set(value=running)
 
-    def __init__(self, master):
-        self.master = master
-        self.master.title("Dogui")
-        self.master.minsize(1000, 600)
-        self.master.resizable(width=False, height=False)
-        self.master.rowconfigure(0, weight=1)
-        self.dockerClient = docker.from_env()
+    def show_about(self, master):
+        self.aboutLabel = Label(master, text="Dogui v0.0.1")
+        self.aboutLabel.grid(row=0, column=0,
+                             sticky=(N, S, E, W))
 
-        # LAUNCH CONTAINER BUTTON
-        self.containerManagement = Button(self.master,
-                                          text="Launch\nContainer",
-                                          width=30,
-                                          height=4,
-                                          relief=FLAT,
-                                          bg='gray',
-                                          command=lambda: messagebox.showinfo(message="Work In Progress"))
-        self.containerManagement.grid(column=0, row=0, padx=(10, 10), pady=(10, 10))
-
-        # IMAGE MANAGEMENT BUTTON
-        self.imageManagement = Button(self.master,
-                                      text="Image \n management",
-                                      width=30,
-                                      height=4,
-                                      relief=FLAT,
-                                      bg='gray',
-                                      command=lambda: Dimages(self.master, self.dockerClient))
-        self.imageManagement.grid(column=1, row=0, padx=(10, 10), pady=(10, 10))
-
-        # BUILD CONTAINER BUTTON
-        self.buttonBuild = Button(self.master,
-                                  text="Build Container",
-                                  width=30,
-                                  height=4,
-                                  relief=FLAT,
-                                  bg='gray',
-                                  command=lambda: messagebox.showinfo(message="Work In Progress"))
-        self.buttonBuild.grid(column=0, row=1, padx=(10, 10), pady=(10, 10))
-
-        # QUIT BUTTON
-        self.buttonQuit = Button(self.master,
-                                 text="Quit",
-                                 width=30,
-                                 height=4,
-                                 relief=FLAT,
-                                 bg='gray',
-                                 command=lambda:
-                                 self.master.destroy())
-        self.buttonQuit.grid(column=1, row=1, padx=(10, 10), pady=(10, 10))
-
-        # CONTAINERS FRAME
+    def draw_containers_frame(self):
         self.runningContainersFrame = ttk.Labelframe(self.master,
                                                      relief=GROOVE,
                                                      text='Running containers')
-        self.runningContainersFrame.grid(column=0, row=2,
+        self.runningContainersFrame.grid(column=0, row=1,
                                          padx=(4, 4), pady=(4, 4),
-                                         sticky=(S, E, W),
-                                         columnspan=3)
+                                         sticky=(S, E, W))
         self.runningContainersFrame.columnconfigure(0, weight=1)
         self.runningContainers = StringVar()
-        self.runningContainersLabel = Label(self.runningContainersFrame,
-                                            font=('monospace', 9, 'bold'),
-                                            foreground='blue',
-                                            text='Id'.center(20)
-                                                 + 'Image'.center(20)
-                                                 + 'Command'.center(20)
-                                                 + 'Created'.center(30)
-                                                 + 'Names'.center(20)
-                                                 + 'NetworkSettings'.center(20)
-                                                 + 'Status'.center(20))
-        self.runningContainersLabel.grid(column=0, row=0,
-                                         padx=(4, 0),
-                                         sticky=W)
+        Label(self.runningContainersFrame,
+              font=('monospace', 9, 'bold'),
+              foreground='blue',
+              text='Id'.center(20)
+                   + 'Image'.center(20)
+                   + 'Command'.center(20)
+                   + 'Created'.center(30)
+                   + 'Names'.center(20)
+                   + 'NetworkSettings'.center(20)
+                   + 'Status'.center(20)).grid(column=0, row=0,
+                                               padx=(4, 0),
+                                               sticky=W)
         self.runningContainersListbox = Listbox(self.runningContainersFrame,
                                                 listvariable=self.runningContainers,
-                                                height=25,
+                                                height=20,
                                                 width=140,
                                                 relief=FLAT,
                                                 selectmode='extended',
@@ -186,6 +140,7 @@ class App:
         self.runningContainersListbox.grid(column=0, row=1,
                                            rowspan=6,
                                            padx=(4, 0),
+                                           pady=(2, 6),
                                            sticky=(N, E, W))
         # Scroll y
         self.runningContainersListboxScrolly = Scrollbar(self.runningContainersFrame,
@@ -193,8 +148,9 @@ class App:
                                                          bd=0,
                                                          relief=FLAT,
                                                          command=self.runningContainersListbox)
-        self.runningContainersListboxScrolly.grid(row=1, column=2,
-                                                  rowspan=5,
+        self.runningContainersListboxScrolly.grid(row=1, column=1,
+                                                  pady=(2, 6),
+                                                  rowspan=6,
                                                   sticky=(N, S))
         self.runningContainersListbox['yscrollcommand'] = self.runningContainersListboxScrolly.set
 
@@ -206,17 +162,19 @@ class App:
                                            relief=FLAT,
                                            bg='gray',
                                            command=lambda: self.start_containers())
-        self.buttonStartContainer.grid(column=4, row=1, padx=(2, 2))
+        self.buttonStartContainer.grid(column=2, row=1,
+                                       sticky=N,
+                                       padx=(2, 2))
 
         # BUTTON STOP CONTAINER
-        self.buttonHaltContainer = Button(self.runningContainersFrame,
+        self.buttonStopContainer = Button(self.runningContainersFrame,
                                           text="Stop",
                                           width=10,
                                           height=2,
                                           relief=FLAT,
                                           bg='gray',
                                           command=lambda: self.stop_containers())
-        self.buttonHaltContainer.grid(column=4, row=2, padx=(2, 2))
+        self.buttonStopContainer.grid(column=2, row=2, padx=(2, 2))
 
         # BUTTON RESTART CONTAINER
         self.buttonRestartContainer = Button(self.runningContainersFrame,
@@ -226,7 +184,7 @@ class App:
                                              relief=FLAT,
                                              bg='gray',
                                              command=lambda: self.restart_containers())
-        self.buttonRestartContainer.grid(column=4, row=3, padx=(2, 2))
+        self.buttonRestartContainer.grid(column=2, row=3, padx=(2, 2))
 
         # BUTTON KILL CONTAINER
         self.buttonKillContainer = Button(self.runningContainersFrame,
@@ -236,7 +194,7 @@ class App:
                                           relief=FLAT,
                                           bg='gray',
                                           command=lambda: self.kill_containers())
-        self.buttonKillContainer.grid(column=4, row=4, padx=(2, 2))
+        self.buttonKillContainer.grid(column=2, row=4, padx=(2, 2))
 
         # BUTTON INSPECT CONTAINER
         self.buttonInspectContainer = Button(self.runningContainersFrame,
@@ -246,17 +204,88 @@ class App:
                                              relief=FLAT,
                                              bg='gray',
                                              command=lambda: self.inspect_containers())
-        self.buttonInspectContainer.grid(column=4, row=5, padx=(2, 2))
+        self.buttonInspectContainer.grid(column=2, row=5, padx=(2, 2))
 
         # BUTTON REMOVE CONTAINER
-        self.buttonInspectContainer = Button(self.runningContainersFrame,
-                                             text="Remove",
-                                             width=10,
-                                             height=2,
-                                             relief=FLAT,
-                                             bg='gray',
-                                             command=lambda: self.remove_containers)
-        self.buttonInspectContainer.grid(column=4, row=6, padx=(2, 2))
+        self.buttonRemoveContainer = Button(self.runningContainersFrame,
+                                            text="Remove",
+                                            width=10,
+                                            height=2,
+                                            relief=FLAT,
+                                            bg='gray',
+                                            command=lambda: self.remove_containers())
+        self.buttonRemoveContainer.grid(column=2, row=6, padx=(2, 2))
+
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Dogui")
+        self.master.minsize(1000, 600)
+        self.master.resizable(width=False, height=False)
+        self.master.rowconfigure(0, weight=1)
+        self.dockerClient = docker.from_env()
+
+        ##############
+        # Main Frame #
+        ##############
+
+        self.Notebook = ttk.Notebook(self.master)
+        self.Notebook.grid(row=0, column=0,
+                           sticky=(N, S, E, W))
+
+        # Draw Launch Container tab
+        self.launchContainer = Frame(self.Notebook)
+        self.Notebook.add(self.launchContainer, text="Launch Container")
+        Linstance(self.launchContainer)
+        #########
+
+        # Draw Advance tab
+        self.advanced = Frame(self.Notebook)
+        self.advanced.columnconfigure(0, weight=1)
+        self.advanced.rowconfigure(0, weight=1)
+        self.Notebook.add(self.advanced, text="Advanced")
+        self.labelAdvanced = Label(self.advanced, text="Work In Progress")
+        self.labelAdvanced.grid()
+        #########
+
+        # Draw Image Management tab
+        self.ImageManagement = Frame(self.Notebook)
+        self.ImageManagement.columnconfigure(0, weight=1)
+        self.ImageManagement.rowconfigure(0, weight=1)
+        self.Notebook.add(self.ImageManagement, text="Image Management")
+        Dimages(master=self.ImageManagement, docker_client=self.dockerClient)
+        #########
+
+        # Draw Build Container tab
+        self.buildContainer = Frame(self.Notebook)
+        self.buildContainer.columnconfigure(0, weight=1)
+        self.buildContainer.rowconfigure(0, weight=1)
+        self.Notebook.add(self.buildContainer, text="Build Container")
+        self.labelBuildContainer = Label(self.buildContainer, text="Work In Progress")
+        self.labelBuildContainer.grid()
+        #########
+
+        # Draw About tab
+        self.About = Frame(self.Notebook)
+        self.About.columnconfigure(0, weight=1)
+        self.About.rowconfigure(0, weight=1)
+        self.Notebook.add(self.About, text="About")
+        self.aboutLabel = None
+        self.show_about(self.About)
+        #########
+
+        # draw containers list
+        self.runningContainersFrame = None
+        self.runningContainers = None
+        self.runningContainersListbox = None
+        self.runningContainersListboxScrolly = None
+        self.buttonStartContainer = None
+        self.buttonStopContainer = None
+        self.buttonRestartContainer = None
+        self.buttonKillContainer = None
+        self.buttonInspectContainer = None
+        self.buttonRemoveContainer = None
+        self.draw_containers_frame()
+        #########
 
         self.update()
 
