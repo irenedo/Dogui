@@ -21,7 +21,6 @@ def pretty_print(d, off=' '):
 
 
 class Inspection:
-
     def __init__(self, topwindow, container, dockerclient):
         window = Toplevel(topwindow)
         window.title('Container ID:' + container)
@@ -58,11 +57,10 @@ class Inspection:
         data['xscrollcommand'] = x_scroll.set
 
         # Quit button
-        quit_button = Button(window,
-                             text="Close",
-                             relief=FLAT,
-                             bg='gray',
-                             command=lambda: window.destroy())
-        quit_button.grid(row=2, column=0,
-                         columnspan=2,
-                         pady=(5, 10), padx=(0, 5))
+        Button(window,
+               text="Close",
+               relief=FLAT,
+               bg='gray',
+               command=lambda: window.destroy()).grid(row=2, column=0,
+                                                      columnspan=2,
+                                                      pady=(5, 10), padx=(0, 5))
