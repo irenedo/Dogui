@@ -1,17 +1,19 @@
+from functions import *
 from tkinter import *
 from tkinter import ttk, messagebox
 import threading
 
 
-def execute_pulling(app, image):
-    app.queuedTasks['images'][image] = 'pulling'
-    app.list_local_images()
-    app.dockerClient.pull(image)
-    del app.queuedTasks['images'][image]
-    app.list_local_images()
+class Images:
 
+    def list_local_images(self):
+        local_images = [x['RepoTags'] for x in self.dockerClient.images()
+                        if x['RepoTags'] != ['<none>:<none>'] and
+                        x['RepoTags'] is not None]
+        tasks = [['{}({}...)'.format(img, self.queuedTasks['images'][img])]
+                 for img in self.queuedTasks['images'].keys()]
+        self.localImages.set(value=local_images + tasks)
 
-class Dimages:
     def list_hub_images(self, event):
         image = self.pattern.get()
         if image != "Enter image name...":
@@ -23,50 +25,39 @@ class Dimages:
         else:
             pass
 
-    def list_local_images(self):
-        local_images = [x['RepoTags'] for x in self.dockerClient.images()
-                        if x['RepoTags'] != ['<none>:<none>'] and
-                        x['RepoTags'] is not None]
-        tasks = [['{}({}...)'.format(img, self.queuedTasks['images'][img])]
-                 for img in self.queuedTasks['images'].keys()]
-        self.localImages.set(value=local_images + tasks)
-
     def pull_images(self):
         if self.rImages.curselection():
             try:
                 idx = self.rImages.get(self.rImages.curselection())
                 tag = self.tagEntry.get()
+                if tag is '':
+                    tag = 'latest'
                 image = '{}:{}'.format(idx, tag)
                 if image not in self.localImages.get():
                     threading.Thread(target=execute_pulling, args=(self, image)).start()
                 else:
                     messagebox.showerror(message='Image already pulled')
-            except:
-                messagebox.showerror(message='There was an error removing images')
+            except docker.errors.APIError as e:
+                messagebox.showerror(message='There was an error removing images:\n {}'.format(e))
 
     def remove_images(self):
-        img = self.lImages.get(self.lImages.curselection())[0]
-        if img.split('(')[0] in self.queuedTasks['images'].keys():
-            messagebox.showinfo(message="Can't remove an image that is being processed")
-        else:
-            try:
-                self.dockerClient.remove_image(img)
-                self.list_local_images()
-            except:
-                messagebox.showerror(message='There was an error removing images')
+        for img in [self.lImages.get(x)[0] for x in self.lImages.curselection()]:
+
+            if img.split('(')[0] in self.queuedTasks['images'].keys():
+                messagebox.showinfo(message="Can't remove an image that is being processed")
+            else:
+                try:
+                    self.dockerClient.remove_image(img)
+                    self.list_local_images()
+                except docker.errors.APIError as e:
+                    messagebox.showerror(message='There was an error removing images:\n {}'.format(e))
 
     def initialize_search_input(self, event):
         self.pattern.set(value="")
         self.searchInput.unbind('<Button-1>')
 
-    def __init__(self, master, docker_client):
-
-        self.queuedTasks = {'images': {}, }
-        self.dockerClient = docker_client
-
-        # Remote images Frame
-        ############
-        remoteFrame = ttk.Labelframe(master,
+    def draw_image_management_frame(self):
+        remoteFrame = ttk.Labelframe(self.images_frame,
                                      relief=GROOVE,
                                      text='Remote images')
         remoteFrame.grid(row=0, column=0,
@@ -162,7 +153,7 @@ class Dimages:
         # Local images Frame
         ############
         # Main Frame
-        localFrame = ttk.Labelframe(master,
+        localFrame = ttk.Labelframe(self.images_frame,
                                     relief=GROOVE,
                                     text='Local images')
         localFrame.grid(row=0, column=1,
@@ -187,15 +178,15 @@ class Dimages:
                           padx=(4, 0), pady=(37, 0))
 
         # Scroll y
-        self.lImagesScroll = Scrollbar(localFrame,
-                                       orient=VERTICAL,
-                                       bd=0,
-                                       relief=FLAT,
-                                       command=self.lImages.yview)
-        self.lImagesScroll.grid(row=0, column=1,
-                                sticky=(W, N, S),
-                                padx=(0, 4), pady=(30, 0))
-        self.lImages['yscrollcommand'] = self.lImagesScroll.set
+        lImagesScrolly = Scrollbar(localFrame,
+                                   orient=VERTICAL,
+                                   bd=0,
+                                   relief=FLAT,
+                                   command=self.lImages.yview)
+        lImagesScrolly.grid(row=0, column=1,
+                            sticky=(W, N, S),
+                            padx=(0, 4), pady=(30, 0))
+        self.lImages['yscrollcommand'] = lImagesScrolly.set
 
         # Scroll x
         lImagesScrollx = Scrollbar(localFrame,
@@ -216,3 +207,17 @@ class Dimages:
                command=self.remove_images).grid(row=3, column=0,
                                                 padx=(4, 4), pady=(0, 4))
         ############
+
+    def __init__(self, master, docker_client):
+        self.queuedTasks = {'images': {}, }
+        self.dockerClient = docker_client
+        self.images_frame = master
+        self.remoteImages = None
+        self.rImages = None
+        self.imageTag = None
+        self.tagEntry = None
+        self.pattern = None
+        self.searchInput = None
+        self.localImages = None
+        self.lImages = None
+        self.draw_image_management_frame()

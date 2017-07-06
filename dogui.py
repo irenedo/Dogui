@@ -1,47 +1,16 @@
 #!/usr/bin/env python3
 
-from dimages import *
-from launch_instance import *
-from inspection import *
-from tkinter import *
-from tkinter import ttk, messagebox
 from time import ctime
-import datetime 
+import datetime
 import docker
+from images import *
+from launch import *
+from tkinter import ttk, messagebox
+from tkinter import *
 
 
-def show_about(master):
-    Label(master,
-          text="Dogui v0.0.1").grid(row=0, column=0,
-                                    sticky=(N, S, E, W))
+class App(Images, Launch):
 
-
-def start_container(app, container_id):
-    app.dockerClient.start(container_id)
-    app.get_running_containers()
-
-
-def stop_container(app, container_id):
-    app.dockerClient.stop(container_id)
-    app.get_running_containers()
-
-
-def kill_container(app, container_id):
-    app.dockerClient.kill(container_id)
-    app.get_running_containers()
-
-
-def restart_container(app, container_id):
-    app.dockerClient.restart(container_id)
-    app.get_running_containers()
-
-
-def remove_container(app, container_id):
-    app.dockerClient.remove_container(container_id)
-    app.get_running_containers()
-
-
-class App:
     def update(self):
         self.get_running_containers()
         self.master.after(1000, self.update)
@@ -101,7 +70,8 @@ class App:
             container = item['Id'][0:10].center(20)[:20] \
                         + item['Image'].center(20)[:20] \
                         + item['Command'].center(20)[:20] \
-                        + str(datetime.datetime.strptime(ctime(item['Created']), "%a %b %d %H:%M:%S %Y")).center(30)[:30] \
+                        + str(datetime.datetime.strptime(ctime(item['Created']), "%a %b %d %H:%M:%S %Y")).center(30)[
+                          :30] \
                         + item['Names'][0][1:].center(20)[:20] \
                         + item['NetworkSettings']['Networks']['bridge']['IPAddress'].center(20)[:20] \
                         + item['Status'].center(20)[:20]
@@ -236,7 +206,7 @@ class App:
         # Draw Launch Container tab
         self.launchContainer = Frame(self.Notebook)
         self.Notebook.add(self.launchContainer, text="Launch Container")
-        Linstance(self.launchContainer, self.dockerClient)
+        Launch.__init__(self, self.launchContainer, self.dockerClient)
         #########
 
         # Draw Advance tab
@@ -254,7 +224,7 @@ class App:
         self.ImageManagement.columnconfigure(1, weight=1)
         self.ImageManagement.rowconfigure(0, weight=1)
         self.Notebook.add(self.ImageManagement, text="Image Management")
-        Dimages(master=self.ImageManagement, docker_client=self.dockerClient)
+        Images.__init__(self, self.ImageManagement, self.dockerClient)
         #########
 
         # Draw Build Container tab
@@ -271,7 +241,9 @@ class App:
         self.About.columnconfigure(0, weight=1)
         self.About.rowconfigure(0, weight=1)
         self.Notebook.add(self.About, text="About")
-        show_about(self.About)
+        Label(self.About,
+              text="Dogui v0.0.1").grid(row=0, column=0,
+                                        sticky=(N, S, E, W))
         #########
 
         # draw containers list

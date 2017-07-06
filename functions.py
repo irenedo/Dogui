@@ -1,4 +1,57 @@
-from tkinter import *
+
+def execute_pulling(app, image):
+    app.queuedTasks['images'][image] = 'pulling'
+    app.list_local_images()
+    app.dockerClient.pull(image)
+    del app.queuedTasks['images'][image]
+    app.list_local_images()
+
+
+def start_container(app, container_id):
+    app.dockerClient.start(container_id)
+    app.get_running_containers()
+
+
+def stop_container(app, container_id):
+    app.dockerClient.stop(container_id)
+    app.get_running_containers()
+
+
+def kill_container(app, container_id):
+    app.dockerClient.kill(container_id)
+    app.get_running_containers()
+
+
+def restart_container(app, container_id):
+    app.dockerClient.restart(container_id)
+    app.get_running_containers()
+
+
+def remove_container(app, container_id):
+    app.dockerClient.remove_container(container_id)
+    app.get_running_containers()
+
+
+def run_container(inst, container):
+    detach = False
+    tty = False
+    # Mirar si lo pilla sin la comparación
+    if inst.LaunchInstanceDetached.get() == 1:
+        detach = True
+
+    if inst.LaunchInstancetty.get() == 1:
+        tty = True
+
+    command = inst.LaunchInstanceCommand.get()
+
+    if container not in inst.localImages.get():
+        execute_pulling(inst, container)
+
+    cid = inst.dockerClient.create_container(container,
+                                             command=command,
+                                             detach=detach,
+                                             tty=tty)['Id']
+    inst.dockerClient.start(cid)
 
 
 def pretty_print(d, off=' '):
