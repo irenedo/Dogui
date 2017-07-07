@@ -90,7 +90,7 @@ class App(Images, Launch):
         self.runningContainers = StringVar()
         Label(runningContainersFrame,
               font=('monospace', 9, 'bold'),
-              foreground='blue',
+              foreground='gray',
               text='Id'.center(20)
                    + 'Image'.center(20)
                    + 'Command'.center(20)

@@ -1,3 +1,5 @@
+from tkinter import *
+
 
 def execute_pulling(app, image):
     app.queuedTasks['images'][image] = 'pulling'
@@ -47,9 +49,26 @@ def run_container(inst, container):
     if container not in inst.localImages.get():
         execute_pulling(inst, container)
 
+    exposed = []
+    port_bindings = {}
+    for ports in inst.launch_portsList.get(0, END):
+        exposed.append(ports.split(":")[1])
+        port_bindings[ports.split(":")[1]] = ports.split(":")[0]
+
+    volumes = []
+    mount_points = {}
+    for dirs in inst.storage_mountPointsList.get(0, END):
+        volumes.append(dirs.split(":")[0])
+        mount_points[dirs.split(":")[0]] = {'bind': dirs.split(":")[1], 'mode': 'rw'}
+
     cid = inst.dockerClient.create_container(container,
                                              command=command,
                                              detach=detach,
+                                             ports=exposed,
+                                             host_config=
+                                             inst.dockerClient.create_host_config(port_bindings=port_bindings,
+                                                                                  binds=mount_points),
+                                             volumes=volumes,
                                              tty=tty)['Id']
     inst.dockerClient.start(cid)
 
