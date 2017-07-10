@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from time import ctime
-import datetime
 import docker
 from images import *
 from launch import *
@@ -10,7 +8,6 @@ from tkinter import *
 
 
 class App(Images, Launch):
-
     def update(self):
         self.get_running_containers()
         self.master.after(1000, self.update)
@@ -58,7 +55,7 @@ class App(Images, Launch):
             pass
         container_id = self.get_container_id()
         for container in container_id:
-            if self.dockerClient.inspect_container(container)['State']['Running']:
+            if self.dockerClient.containers.list(all=True, filters={'id': container})[0].attrs['State']['Running']:
                 messagebox.showerror(message="Can't remove container {} because is running.\n"
                                              "Please kill or stop it before removing".format(container))
             else:
@@ -66,15 +63,25 @@ class App(Images, Launch):
 
     def get_running_containers(self):
         running = []
-        for item in self.dockerClient.containers(all=True):
-            container = item['Id'][0:10].center(20)[:20] \
-                        + item['Image'].center(20)[:20] \
-                        + item['Command'].center(20)[:20] \
-                        + str(datetime.datetime.strptime(ctime(item['Created']), "%a %b %d %H:%M:%S %Y")).center(30)[
-                          :30] \
-                        + item['Names'][0][1:].center(20)[:20] \
-                        + item['NetworkSettings']['Networks']['bridge']['IPAddress'].center(20)[:20] \
-                        + item['Status'].center(20)[:20]
+        for item in self.dockerClient.containers.list(all=True,
+                                                      filters={'status':
+                                                                   ['created',
+                                                                    'restarting',
+                                                                    'running',
+                                                                    'paused',
+                                                                    'exited']}):
+            cid = item.attrs['Id'][0:10].center(20)[:20]
+            image = item.attrs['Config']['Image'].center(20)[:20]
+            cmd = item.attrs['Config']['Cmd']
+            if cmd is None:
+                cmd = ' ' * 20
+            else:
+                cmd = ''.join(cmd).center(20)[:20]
+            datetime = item.attrs['Created'].split('.')[0].replace('T', ' ').center(25)[:30]
+            name = item.attrs['Name'][1:].center(20)[:20]
+            ip = item.attrs['NetworkSettings']['Networks']['bridge']['IPAddress'].center(20)[:20]
+            status = item.attrs['State']['Status'].center(20)[:20]
+            container = cid + image + cmd + datetime + name + ip + status
             running.append(container)
 
         self.runningContainers.set(value=running)
@@ -94,7 +101,7 @@ class App(Images, Launch):
               text='Id'.center(20)
                    + 'Image'.center(20)
                    + 'Command'.center(20)
-                   + 'Created'.center(30)
+                   + 'Created'.center(25)
                    + 'Names'.center(20)
                    + 'NetworkSettings'.center(20)
                    + 'Status'.center(20)).grid(column=0, row=0,
@@ -193,7 +200,7 @@ class App(Images, Launch):
         self.master.minsize(1000, 600)
         self.master.resizable(width=False, height=False)
         self.master.rowconfigure(0, weight=1)
-        self.dockerClient = docker.from_env()
+        self.dockerClient = docker.from_env(version="1.24")
 
         ##############
         # Main Frame #

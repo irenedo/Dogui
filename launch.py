@@ -21,7 +21,7 @@ class Launch:
         image = self.launch_pattern.get()
         if image != "Enter image name...":
             try:
-                hub_images = [x['name'] for x in self.dockerClient.search(image) if x['name'] != []]
+                hub_images = [x['name'] for x in self.dockerClient.images.search(image) if x['name'] != []]
                 self.launch_remoteImages.set(value=hub_images)
             except:
                 messagebox.showerror(message='There was an error getting docker hub images')
@@ -156,21 +156,35 @@ class Launch:
                                                             sticky=(E, W),
                                                             pady=(2, 2),
                                                             padx=(4, 4))
-        self.LaunchInstanceDetached = IntVar()
-        Checkbutton(parent,
-                    relief=FLAT,
-                    text="deattached",
-                    variable=self.LaunchInstanceDetached).grid(row=1, column=0,
-                                                               pady=(2, 2),
-                                                               sticky=W)
 
         self.LaunchInstancetty = IntVar()
         Checkbutton(parent,
                     relief=FLAT,
                     text="tty",
-                    variable=self.LaunchInstancetty).grid(row=2, column=0,
+                    variable=self.LaunchInstancetty).grid(row=1, column=0,
                                                           pady=(2, 2),
                                                           sticky=W)
+        self.LaunchPrivileged = IntVar()
+        Checkbutton(parent,
+                    relief=FLAT,
+                    text="Privileged",
+                    variable=self.LaunchPrivileged).grid(row=2, column=0,
+                                                         pady=(2, 2),
+                                                         sticky=W)
+        self.autoRemove = IntVar()
+        Checkbutton(parent,
+                    relief=FLAT,
+                    text="Auto Remove",
+                    variable=self.autoRemove).grid(row=3, column=0,
+                                                   pady=(2, 2),
+                                                   sticky=W)
+        self.readOnly = IntVar()
+        Checkbutton(parent,
+                    relief=FLAT,
+                    text="Mount Read Only",
+                    variable=self.readOnly).grid(row=4, column=0,
+                                                 pady=(2, 2),
+                                                 sticky=W)
 
     def draw_network_frame(self, parent):
         # Se ha de poner un checkbutton para publish all
@@ -183,6 +197,7 @@ class Launch:
         Label(parent, text="Container port").grid(row=0, column=1,
                                                   pady=(2, 2),
                                                   padx=(2, 2))
+
         self.launch_hostPort = StringVar()
         Entry(parent,
               bg='cornsilk2',
@@ -200,6 +215,7 @@ class Launch:
                                                            sticky=(E, W),
                                                            pady=(2, 2),
                                                            padx=(4, 4))
+
         Button(parent,
                text="Add",
                relief=FLAT,
@@ -236,6 +252,13 @@ class Launch:
                command=self.remove_ports_from_list).grid(row=4, column=0,
                                                          columnspan=2,
                                                          pady=(2, 2))
+        self.publishAll = IntVar()
+        Checkbutton(parent,
+                    relief=FLAT,
+                    text="Publish All Ports",
+                    variable=self.publishAll).grid(row=5, column=0,
+                                                   pady=(2, 2),
+                                                   sticky=W)
 
     def draw_storage_frame(self, parent):
         parent.columnconfigure(0, weight=1)
@@ -376,4 +399,8 @@ class Launch:
         self.storage_ContainerDir = None
         self.storage_mountPointsList = None
         self.storage_mountPoints = None
+        self.LaunchPrivileged = None
+        self.autoRemove = None
+        self.publishAll = None
+        self.readOnly = None
         self.draw_launch_container_frame()

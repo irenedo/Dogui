@@ -4,73 +4,86 @@ from tkinter import *
 def execute_pulling(app, image):
     app.queuedTasks['images'][image] = 'pulling'
     app.list_local_images()
-    app.dockerClient.pull(image)
+    app.dockerClient.images.pull(image)
     del app.queuedTasks['images'][image]
     app.list_local_images()
 
 
 def start_container(app, container_id):
-    app.dockerClient.start(container_id)
+    container = app.dockerClient.containers.list(all=True, filters={'id': container_id})[0]
+    container.start()
     app.get_running_containers()
 
 
 def stop_container(app, container_id):
-    app.dockerClient.stop(container_id)
+    container = app.dockerClient.containers.list(all=True, filters={'id': container_id})[0]
+    container.stop()
     app.get_running_containers()
 
 
 def kill_container(app, container_id):
-    app.dockerClient.kill(container_id)
+    container = app.dockerClient.containers.list(all=True, filters={'id': container_id})[0]
+    container.kill()
     app.get_running_containers()
 
 
 def restart_container(app, container_id):
-    app.dockerClient.restart(container_id)
+    container = app.dockerClient.containers.list(all=True, filters={'id': container_id})[0]
+    container.restart()
     app.get_running_containers()
 
 
 def remove_container(app, container_id):
-    app.dockerClient.remove_container(container_id)
+    container = app.dockerClient.containers.list(all=True, filters={'id': container_id})[0]
+    container.remove()
     app.get_running_containers()
 
 
 def run_container(inst, container):
-    detach = False
     tty = False
-    # Mirar si lo pilla sin la comparación
-    if inst.LaunchInstanceDetached.get() == 1:
-        detach = True
+    privileged = False
+    autoRemove = False
+    publishAll = False
+    readonly = False
 
     if inst.LaunchInstancetty.get() == 1:
         tty = True
+
+    if inst.LaunchPrivileged.get() == 1:
+        privileged = True
+
+    if inst.autoRemove.get() == 1:
+        autoRemove = True
+
+    if inst.publishAll.get() == 1:
+        publishAll = True
+
+    if inst.readOnly.get() == 1:
+        readonly = True
 
     command = inst.LaunchInstanceCommand.get()
 
     if container not in inst.localImages.get():
         execute_pulling(inst, container)
 
-    exposed = []
     port_bindings = {}
-    for ports in inst.launch_portsList.get(0, END):
-        exposed.append(ports.split(":")[1])
-        port_bindings[ports.split(":")[1]] = ports.split(":")[0]
+    if not publishAll:
+        for ports in inst.launch_portsList.get(0, END):
+            port_bindings[ports.split(":")[1]] = ports.split(":")[0]
 
-    volumes = []
     mount_points = {}
     for dirs in inst.storage_mountPointsList.get(0, END):
-        volumes.append(dirs.split(":")[0])
         mount_points[dirs.split(":")[0]] = {'bind': dirs.split(":")[1], 'mode': 'rw'}
 
-    cid = inst.dockerClient.create_container(container,
-                                             command=command,
-                                             detach=detach,
-                                             ports=exposed,
-                                             host_config=
-                                             inst.dockerClient.create_host_config(port_bindings=port_bindings,
-                                                                                  binds=mount_points),
-                                             volumes=volumes,
-                                             tty=tty)['Id']
-    inst.dockerClient.start(cid)
+    inst.dockerClient.containers.run(container,
+                                     command=command,
+                                     detach=True, # hay que ver cómo tratarlo
+                                     tty=tty,
+                                     ports=port_bindings,
+                                     privileged=privileged,
+                                     remove=autoRemove,
+                                     publish_all_ports=publishAll,
+                                     volumes=mount_points)
 
 
 def pretty_print(d, off=' '):
@@ -106,7 +119,9 @@ class Inspection:
 
         data.grid(column=0, row=0,
                   sticky=W)
-        [data.insert(END, line) for line in pretty_print(dockerclient.inspect_container(container)).split('||')]
+        [data.insert(END, line)
+         for line in
+         pretty_print(dockerclient.containers.list(all=True, filters={'id': container})[0].attrs).split('||')]
 
         # Scroll y
         y_scroll = Scrollbar(window,

@@ -7,9 +7,9 @@ import threading
 class Images:
 
     def list_local_images(self):
-        local_images = [x['RepoTags'] for x in self.dockerClient.images()
-                        if x['RepoTags'] != ['<none>:<none>'] and
-                        x['RepoTags'] is not None]
+        local_images = [x.attrs['RepoTags'] for x in self.dockerClient.images.list()
+                        if x.attrs['RepoTags'] != ['<none>:<none>'] and
+                        x.attrs['RepoTags'] is not None]
         tasks = [['{}({}...)'.format(img, self.queuedTasks['images'][img])]
                  for img in self.queuedTasks['images'].keys()]
         self.localImages.set(value=local_images + tasks)
@@ -18,7 +18,7 @@ class Images:
         image = self.pattern.get()
         if image != "Enter image name...":
             try:
-                hub_images = [x['name'] for x in self.dockerClient.search(image) if x['name'] != []]
+                hub_images = [x['name'] for x in self.dockerClient.images.search(image) if x['name'] != []]
                 self.remoteImages.set(value=hub_images)
             except:
                 messagebox.showerror(message='There was an error getting docker hub images')
@@ -47,7 +47,7 @@ class Images:
                 messagebox.showinfo(message="Can't remove an image that is being processed")
             else:
                 try:
-                    self.dockerClient.remove_image(img)
+                    self.dockerClient.images.remove(img)
                     self.list_local_images()
                 except docker.errors.APIError as e:
                     messagebox.showerror(message='There was an error removing images:\n {}'.format(e))
