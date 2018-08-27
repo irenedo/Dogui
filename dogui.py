@@ -70,17 +70,21 @@ class App(Images, Launch):
                                                                     'running',
                                                                     'paused',
                                                                     'exited']}):
-            cid = item.attrs['Id'][0:10].center(20)[:20]
-            image = item.attrs['Config']['Image'].center(20)[:20]
+            cid = item.attrs['Id'][0:10].center(35)[:40]
+            image = item.attrs['Config']['Image'].center(40)[:40]
             cmd = item.attrs['Config']['Cmd']
             if cmd is None:
-                cmd = ' ' * 20
+                cmd = ' ' * 40
             else:
-                cmd = ''.join(cmd).center(20)[:20]
-            datetime = item.attrs['Created'].split('.')[0].replace('T', ' ').center(25)[:30]
-            name = item.attrs['Name'][1:].center(20)[:20]
-            ip = item.attrs['NetworkSettings']['Networks']['bridge']['IPAddress'].center(20)[:20]
-            status = item.attrs['State']['Status'].center(20)[:20]
+                cmd = ''.join(cmd).center(35)[:40]
+            datetime = item.attrs['Created'].split('.')[0].replace('T', ' ').center(45)[:40]
+            name = item.attrs['Name'][1:].center(35)[:40]
+            ip = item.attrs['NetworkSettings']['IPAddress']
+            if ip != "":
+              ip = ip.center(35)[:40]
+            else:
+              ip = ' ' * 40
+            status = item.attrs['State']['Status'].center(45)[:40]
             container = cid + image + cmd + datetime + name + ip + status
             running.append(container)
 
@@ -98,13 +102,13 @@ class App(Images, Launch):
         Label(runningContainersFrame,
               font=('monospace', 9, 'bold'),
               foreground='gray',
-              text='Id'.center(20)
-                   + 'Image'.center(20)
-                   + 'Command'.center(20)
-                   + 'Created'.center(25)
-                   + 'Names'.center(20)
-                   + 'NetworkSettings'.center(20)
-                   + 'Status'.center(20)).grid(column=0, row=0,
+              text='Id'.center(40)
+                   + 'Image'.center(40)
+                   + 'Command'.center(40)
+                   + 'Created'.center(45)
+                   + 'Names'.center(40)
+                   + 'NetworkSettings'.center(40)
+                   + 'Status'.center(40)).grid(column=0, row=0,
                                                padx=(4, 0),
                                                sticky=W)
         self.runningContainersListbox = Listbox(runningContainersFrame,
